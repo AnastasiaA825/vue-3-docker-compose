@@ -3,7 +3,7 @@
     <div v-if = "isFinished" class = "play-zone__overlay">
       <div class = "play-zone__overlay__panel">
         <h2>Время закончилось!</h2>
-        <p>Твой результат: {{ finalPoints.toFixed(1) }}</p>
+        <p>Твой результат: {{ formattedFinalPoints }}</p>
         <button class = "play-zone__overlay__btn" @click = "() => restartMatch()">Ещё раз</button>
         <RouterLink
             :to = "{ name: $routes.MAINMENU }"
@@ -12,7 +12,8 @@
         </RouterLink>
       </div>
     </div>
-    <BubbleGame
+
+    <BubblePlayground
         ref = "gameInstance"
         :totalColors = "storedColorsCount"
         :targetColor = "storedTargetColor"
@@ -20,21 +21,21 @@
         :pointsForCorrect = "storedPointsSuccess"
         :pointsForWrong = "storedPointsFail"
         :onStart = "handleStart"
+        :onScore = "updateScore"
+        :onFinish = "gameOver"
         :gameDuration = "60"
-        @score = "(data) => updateScore(data)"
-        @finish = "(result) => gameOver(result)"
     />
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import { mapGetters } from 'vuex'
-import BubbleGame from './../game/BubbleGame.vue'
+import BubblePlayground from './../game/BubbleGame.vue'
 
 export default {
   name: 'GamePage',
   components: {
-    BubbleGame
+    BubblePlayground
   },
   data() {
     return {
@@ -50,7 +51,10 @@ export default {
       storedSpawnSpeed: 'spawnRate',
       storedPointsSuccess: 'pointsCorrect',
       storedPointsFail: 'pointsWrong'
-    })
+    }),
+    formattedFinalPoints() {
+      return this.finalPoints.toFixed(1)
+    }
   },
   methods: {
     handleStart() {
@@ -58,19 +62,20 @@ export default {
       this.finalPoints = 0
       this.currentPoints = 0
     },
-    updateScore(scoreData: { points: number; count: number }) {
+    updateScore(scoreData) {
       this.currentPoints += scoreData.points
     },
-    gameOver(result: { score: number; timeElapsed: number }) {
+    gameOver(result) {
       this.finalPoints = result.score
       this.isFinished = true
     },
     restartMatch() {
       this.isFinished = false
-      if (this.$refs.gameInstance) {
-        (this.$refs.gameInstance as any).restartGame()
+      const gameComponent = this.$refs.gameInstance
+      if (gameComponent && gameComponent.restartGame) {
+        gameComponent.restartGame()
       }
-    },
+    }
   }
 }
 </script>
